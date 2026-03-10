@@ -1,18 +1,19 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
-import pandas as pd
-import io
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'niloy_mess_secret_2026'
 
-# PostgreSQL/SQLite Database Configuration
+# --- PostgreSQL / SQLite Configuration ---
+# Render-এ DATABASE_URL এনভায়রনমেন্ট ভেরিয়েবল থেকে লিঙ্ক নেবে
 uri = os.getenv("DATABASE_URL")
 if uri and uri.startswith("postgres://"):
+    # SQLAlchemy 1.4+ এর জন্য postgres:// কে postgresql:// করতে হয়
     uri = uri.replace("postgres://", "postgresql://", 1)
+
 app.config['SQLALCHEMY_DATABASE_URI'] = uri or 'sqlite:///master_niloy_mess.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -22,8 +23,8 @@ db = SQLAlchemy(app)
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
-    password = db.Column(db.String(100), nullable=False)
-    role = db.Column(db.String(10), default='border')
+    password = db.Column(db.String(255), nullable=False)
+    role = db.Column(db.String(10), default='border') # admin or border
     deposit = db.Column(db.Float, default=0.0)
 
 class BazarSchedule(db.Model):
@@ -36,9 +37,9 @@ class Meal(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     date = db.Column(db.String(20))
-    morning = db.Column(db.Float, default=0.2)
-    lunch = db.Column(db.Float, default=0.4)
-    dinner = db.Column(db.Float, default=0.4)
+    morning = db.Column(db.Float, default=0.0)
+    lunch = db.Column(db.Float, default=0.0)
+    dinner = db.Column(db.Float, default=0.0)
     is_off = db.Column(db.Boolean, default=False)
     status = db.Column(db.String(20), default='approved')
 
@@ -55,7 +56,7 @@ class ExtraCost(db.Model):
     description = db.Column(db.String(100))
     amount = db.Column(db.Float)
 
-# --- Calculation Helpers ---
+# --- Calculation Logic ---
 def get_all_stats():
     total_bazar = db.session.query(db.func.sum(Bazar.amount)).filter_by(status='approved').scalar() or 0
     total_meals = db.session.query(db.func.sum(Meal.morning + Meal.lunch + Meal.dinner)).filter_by(is_off=False, status='approved').scalar() or 0
@@ -65,12 +66,11 @@ def get_all_stats():
     extra_per_head = total_extra / num_users if num_users > 0 else 0
     return total_bazar, total_meals, meal_rate, total_extra, extra_per_head
 
-# --- App Context ---
+# --- App Logic ---
 @app.context_processor
 def inject_now():
     return {'now': datetime.now()}
 
-# --- Routes ---
 @app.route('/')
 def index():
     if 'user_id' in session:
@@ -124,18 +124,20 @@ def logout():
     session.clear()
     return redirect(url_for('index'))
 
+# --- Server Start & Table Creation ---
 if __name__ == '__main__':
     with app.app_context():
         # এটি ডাটাবেজে সব টেবিল তৈরি করবে
-        db.create_all() 
-        # অ্যাডমিন ইউজার চেক এবং তৈরি
-        admin_user = User.query.filter_by(username='admin').first()
-        if not admin_user:
+        db.create_all()
+        # চেক করবে অ্যাডমিন ইউজার আছে কি না, না থাকলে তৈরি করবে
+        admin_check = User.query.filter_by(username='admin').first()
+        if not admin_check:
             hashed_pw = generate_password_hash('admin123')
-            db.session.add(User(username='admin', password=hashed_pw, role='admin'))
+            new_admin = User(username='admin', password=hashed_pw, role='admin')
+            db.session.add(new_admin)
             db.session.commit()
-            print("Admin user created successfully!")
+            print("Admin account created: user=admin, pass=admin123")
     
-    # Render-এর জন্য পোর্ট সেট করা (জরুরি)
+    # Render-এর জন্য পোর্ট সেট করা
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
