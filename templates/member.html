@@ -1,0 +1,24 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        {% set today = now.strftime('%Y-%m-%d') %}
+        {% for s in user.schedules %}{% if s.date == today %}<div class="alert alert-primary btn-round shadow-sm"><strong>আজ আপনার বাজারের দিন!</strong> হিসাব জমা দিন।</div>{% endif %}{% endfor %}
+
+        <div class="card shadow-lg mb-4 text-center p-4 border-0">
+            <h6 class="text-muted">আপনার ব্যালেন্স</h6>
+            <h1 class="display-3 fw-bold {% if balance < 0 %}text-danger{% else %}text-success{% endif %}">{{ balance }}৳</h1>
+            {% if balance < 0 %}<p class="text-danger">দ্রুত টাকা জমা দিন!</p>{% else %}<p class="text-muted small">আরও {{ days_left|int }} দিন চলবে।</p>{% endif %}
+        </div>
+
+        <div class="row g-2 mb-4">
+            <div class="col-6"><div class="card p-3 shadow-sm border-0 text-center"><h6>মোট মিল</h6><h3>{{ my_meals }}</h3></div></div>
+            <div class="col-6"><div class="card p-3 shadow-sm border-0 text-center"><h6>এক্সট্রা খরচ</h6><h3>{{ e_head }}৳</h3></div></div>
+        </div>
+
+        <div class="card shadow-sm p-4 mb-4"><h5>আগামীকালের মিল বন্ধ/চালু</h5><p class="small text-muted">রাত ১১টার পর পরিবর্তন করা যাবে না।</p>
+            <form action="/member/meal_request" method="POST" class="d-flex gap-2"><button class="btn btn-success flex-grow-1">চালু</button><button class="btn btn-danger flex-grow-1">বন্ধ</button></form>
+        </div>
+    </div>
+</div>
+{% endblock %}

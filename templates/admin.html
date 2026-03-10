@@ -1,0 +1,35 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-6"><div class="card p-3 shadow-sm border-start border-primary border-5"><h6>মোট ডিপোজিট</h6><h4>{{ users|sum(attribute='deposit') }}৳</h4></div></div>
+    <div class="col-md-3 col-6"><div class="card p-3 shadow-sm border-start border-success border-5"><h6>মোট মিল</h6><h4>{{ t_meals }}</h4></div></div>
+    <div class="col-md-3 col-6"><div class="card p-3 shadow-sm border-start border-warning border-5"><h6>মিল রেট</h6><h4>{{ "{:,.2f}".format(m_rate) }}৳</h4></div></div>
+    <div class="col-md-3 col-6"><div class="card p-3 shadow-sm border-start border-danger border-5"><h6>এক্সট্রা খরচ</h6><h4>{{ t_extra }}৳</h4></div></div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow-sm p-4 mb-4">
+            <div class="d-flex justify-content-between mb-3"><h5>মেম্বার লিস্ট</h5><button class="btn btn-primary btn-sm btn-round" data-bs-toggle="modal" data-bs-target="#addMemberModal">+ নতুন মেম্বার</button></div>
+            <table class="table">
+                <thead><tr><th>নাম</th><th>ডিপোজিট</th><th>অ্যাকশন</th></tr></thead>
+                <tbody>{% for u in users %}<tr><td>{{ u.username }}</td><td>{{ u.deposit }}৳</td><td><button class="btn btn-sm btn-info">এডিট</button></td></tr>{% endfor %}</tbody>
+            </table>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card shadow-sm p-3 mb-4 bg-light">
+            <h6 class="fw-bold"><i class="fas fa-calendar-alt me-2"></i>বাজার শিডিউল সেট</h6>
+            <form method="POST"><input type="hidden" name="action" value="set_schedule"><input type="date" name="date" class="form-control mb-2" required>
+                <select name="user_id" class="form-select mb-2">{% for u in users %}<option value="{{ u.id }}">{{ u.username }}</option>{% endfor %}</select>
+                <button class="btn btn-info w-100 text-white btn-sm">সেভ শিডিউল</button>
+            </form>
+        </div>
+        <div class="card shadow-sm p-3"><h6 class="fw-bold">এক্সট্রা খরচ</h6>
+            <form method="POST"><input type="hidden" name="action" value="add_extra"><input type="text" name="desc" class="form-control mb-2" placeholder="নাম"><input type="number" name="amount" class="form-control mb-2" placeholder="টাকা"><button class="btn btn-dark w-100 btn-sm">অ্যাড</button></form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addMemberModal" tabindex="-1"><div class="modal-dialog"><form class="modal-content" method="POST"><div class="modal-header"><h5>নতুন মেম্বার</h5></div><div class="modal-body"><input type="hidden" name="action" value="add_member"><input type="text" name="username" class="form-control mb-2" placeholder="নাম"><input type="password" name="password" class="form-control" placeholder="পাসওয়ার্ড"></div><div class="modal-footer"><button class="btn btn-primary w-100">অ্যাড</button></div></form></div></div>
+{% endblock %}
