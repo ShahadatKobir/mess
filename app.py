@@ -126,8 +126,16 @@ def logout():
 
 if __name__ == '__main__':
     with app.app_context():
-        db.create_all()
-        if not User.query.filter_by(username='admin').first():
-            db.session.add(User(username='admin', password=generate_password_hash('admin123'), role='admin'))
+        # এটি ডাটাবেজে সব টেবিল তৈরি করবে
+        db.create_all() 
+        # অ্যাডমিন ইউজার চেক এবং তৈরি
+        admin_user = User.query.filter_by(username='admin').first()
+        if not admin_user:
+            hashed_pw = generate_password_hash('admin123')
+            db.session.add(User(username='admin', password=hashed_pw, role='admin'))
             db.session.commit()
-    app.run(debug=True)
+            print("Admin user created successfully!")
+    
+    # Render-এর জন্য পোর্ট সেট করা (জরুরি)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
